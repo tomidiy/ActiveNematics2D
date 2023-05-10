@@ -28,8 +28,8 @@ double dt_pseudo = 2e-4;
 double p_target_rel_change = 1e-4;
 int max_p_iters = 0;
 int udiff_thresh = -1;
-int max_steps = (int) 1e9;
-double max_t = 1e9;
+int max_steps = (int) 1e3;//1e9;
+double max_t = 1e3;//1e9;
 double zeta = 256.0 * 256.0 / (2.0 * 2.0);
 double nu = 809.5430810031052 * 1.0;   //nu = sqrt(K / Re);
 
@@ -40,35 +40,6 @@ double ss_scale = 0.1 * 0.5;
 int seed = 12345;
 int save_every_n_steps = 10 * 100;
 
-
-/***double K;
-double nematic_coherence_length;
-double gamma;
-double lambda;
-double Re;
-double active_length_scale;
-int jit_loops;
-#define dt 9
-
-
-double dt_pseudo = dt;
-double p_target_rel_change;
-int max_p_iters;
-int udiff_thresh = -1;
-int max_steps;
-double max_t;
-double zeta;
-double nu;
-double C;
-double A;
-double S0;
-double figheight;
-int n_rods;
-double uscale;
-double n_quiver_scale;
-double ss_scale;
-int seed;
-int save_every_n_steps;    ***/
 
 double coeff = -1;
 
@@ -117,12 +88,9 @@ void make_directory_if_needed(char* pathname)
     }
 }
 
-/***int update_step_inner(double *u, double *dudt , double *Q, double *dQdt, double *p, double  *p_aux, 
-                            double *pressure_poisson_RHS, double *S, double *H, double *Π_S, double *Π_A,
-                                    struct consts_dict consts, int Lx, int Ly, int D, int ncomps)***/
 
                                     
-void Laplacian(double* arr, double* out, double coeff, int Lx, int Ly)
+void Laplacian(double *arr, double *out, double coeff, int Lx, int Ly)
 {
     //Laplacian of a scalar array
     int xup, xdn, yup, ydn;
@@ -130,12 +98,12 @@ void Laplacian(double* arr, double* out, double coeff, int Lx, int Ly)
     coeff /= 6;
     for(int x=0; x<Lx; x++)
     {
-        xup = (x + 1) % Lx;
-        xdn = (x - 1);
+        xup = (x + 1) % Lx;       
+        xdn = x < 1 ? (Lx - 1) : (x - 1);   //go to the last index if x is the first index else x is the immediate past index
         for(int y=0; y<Ly; y++)
         {
-            yup = (y + 1) % Ly;
-            ydn = (y - 1);
+            yup = (y + 1) % Ly;     
+            ydn = y < 1 ? (Ly - 1) : (y - 1);
             out[x*Ly + y] = coeff * (-20*arr[x*Ly + y] + 4 * (
                     arr[xup*Ly + y] + arr[x*Ly + ydn] +  arr[x*Ly + yup]
                         +  arr[xdn*Ly + y]) +  arr[xup*Ly + ydn] +  arr[xup*Ly + yup]
@@ -147,7 +115,7 @@ void Laplacian(double* arr, double* out, double coeff, int Lx, int Ly)
 }
 
 
-void Laplacian_vector(double* arr, double* out, double coeff, int Lx, int Ly, int ncomps)
+void Laplacian_vector(double *arr, double *out, double coeff, int Lx, int Ly, int ncomps)
 {
     //Laplacian of a vector array
     int xup, xdn, yup, ydn;
@@ -156,11 +124,11 @@ void Laplacian_vector(double* arr, double* out, double coeff, int Lx, int Ly, in
     for(int x=0; x<Lx; x++)
     {
         xup = (x + 1) % Lx;
-        xdn = (x - 1);
+        xdn = x < 1 ? (Lx - 1) : (x - 1);
         for(int y=0; y<Ly; y++)
         {
             yup = (y + 1) % Ly;
-            ydn = (y - 1);
+            ydn = y < 1 ? (Ly - 1) : (y - 1);
             for(int i=0; i<ncomps; i++)
             {
                 out[(x*Ly + y)*ncomps + i] = coeff * (-20*arr[(x*Ly + y)*ncomps + i] + 4 * (
@@ -175,32 +143,34 @@ void Laplacian_vector(double* arr, double* out, double coeff, int Lx, int Ly, in
 }
 
 
-void div_vector(double* arr, double* out, int Lx, int Ly)
+void div_vector(double *arr, double *out, int Lx, int Ly)
 {
     //Calculate the divergence of a vector field
-    int xup, xdn;
+    int xup, xdn, yup, ydn;
 
     for(int x=0; x<Lx; x++)
     {
         xup = (x + 1) % Lx;
-        xdn = (x - 1);
+        xdn = x < 1 ? (Lx - 1) : (x - 1);
         for(int y=0; y<Ly; y++)
         {
+            yup = (y + 1) % Ly;
+            ydn = y < 1 ? (Ly - 1) : (y - 1);
             out[x*Ly + y] = 0.5 * (arr[(xup*Ly + y)*D + 0] - arr[(xdn*Ly + y)*D + 0] 
-                + arr[(x*Ly + (y + 1)%Ly)*D + 1] - arr[(x*Ly + y - 1)*D + 1]);
+                + arr[(x*Ly + yup)*D + 1] - arr[(x*Ly + ydn)*D + 1]);
         }
     }
 }
 
 
-void apply_Q_boundary_conditions(double* Q){}
+void apply_Q_boundary_conditions(double *Q){}
 
-void apply_u_boundary_conditions(double* u){}
+void apply_u_boundary_conditions(double *u){}
 
-void apply_p_boundary_conditions(double* p){}
+void apply_p_boundary_conditions(double *p){}
 
 
-void initialize_Q_from_theta(double* Q, double* theta_initial, double S0, int Lx, int Ly, int ncomps) 
+void initialize_Q_from_theta(double *Q, double *theta_initial, double S0, int Lx, int Ly, int ncomps) 
 {
     double nx_initial, ny_initial;
     for (int x=0; x<Lx; x++) 
@@ -217,34 +187,10 @@ void initialize_Q_from_theta(double* Q, double* theta_initial, double S0, int Lx
 
 
 
-void declare_auxiliary_arrays(double* u, double* Q, double* p, int Lx, int Ly, int ncomps, int D) 
-{
-    double dudt[Lx][Ly][D];       // velocity update
-    double dQdt[Lx][Ly][ncomps];       // Q update 
-    double p_aux[Lx][Ly];         // auxiliary array for pressure updates
-    double H[Lx][Ly][ncomps];       // molecular field 
-    double S[Lx][Ly][ncomps];       // rotational terms for Q
-    double Pi_S[Lx][Ly][D];    // stress tensor traceless-symmetric component
-    double Pi_A[Lx][Ly];       // stress tensor antisymmetric component
-    
-    double pressure_poisson_RHS[Lx][Ly]; // holds right-hand side of pressure-Poisson equation
-    
-    // set all arrays to zero
-    memset(dudt, 0, sizeof(u));
-    memset(dQdt, 0, sizeof(Q));
-    memset(p_aux, 0, sizeof(p));
-    memset(H, 0, sizeof(Q));
-    memset(S, 0, sizeof(Q));
-    memset(Pi_S, 0, sizeof(u));
-    memset(Pi_A, 0, sizeof(p));
-    memset(pressure_poisson_RHS, 0, sizeof(p));
-}
-
-
-void H_S_from_Q(double* u, double* Q, double* H, double* S, double A, double C, double K, double λ, int D)
+void H_S_from_Q(double *u, double *Q, double *H, double *S, double A, double C, double K, double λ, int D)
 { 
     //Calculations for molecular field and co-rotation tensors """ 
-    int xup, xdn;
+    int xup, xdn, yup, ydn;
     double dxux, dxuy, dyux, ωxy, trQsq, λS;
 
     Laplacian_vector(Q, H, coeff=K, Lx, Ly, ncomps); // H = K * ∇²Q
@@ -252,12 +198,15 @@ void H_S_from_Q(double* u, double* Q, double* H, double* S, double A, double C, 
     for(int x; x<Lx; x++)
     {
         xup = (x + 1) % Lx;
-        xdn = (x - 1);
+        xdn = x < 1 ? (Lx - 1) : (x - 1);
         for(int y=0; y<Ly; y++)
         {
+            yup = (y + 1) % Ly;
+            ydn = y < 1 ? (Ly - 1) : (y - 1); 
+
             dxux = 0.5 * (u[(xup*Ly + y)*D + 0] - u[(xdn*Ly + y)*D + 0]);
             dxuy = 0.5 * (u[(xup*Ly + y)*D + 1] - u[(xdn*Ly + y)*D + 1]);
-            dyux = 0.5 * (u[(x*Ly + ((y + 1) % Ly))*D + 0] - u[(x*Ly + (y - 1))*D + 0]);
+            dyux = 0.5 * (u[(x*Ly + yup)*D + 0] - u[(x*Ly + ydn)*D + 0]);
             ωxy = 0.5 * (dxuy - dyux);
             trQsq = 2 * (Q[(x*Ly + y)*ncomps + 0]*Q[(x*Ly + y)*ncomps + 0] + Q[(x*Ly + y)*ncomps + 1]*
                             Q[(x*Ly + y)*ncomps + 1]);
@@ -276,7 +225,7 @@ void H_S_from_Q(double* u, double* Q, double* H, double* S, double A, double C, 
 
 
 
-void calculate_Pi(double* Π_S, double* Π_A, double* H, double* Q, double λ, double ζ, int Lx, int Ly, int ncomps)
+void calculate_Pi(double *Π_S, double *Π_A, double *H, double *Q, double λ, double ζ, int Lx, int Ly, int ncomps)
 {
     //Calculation of stress tensor (elastic + active contributions)
     
@@ -296,7 +245,7 @@ void calculate_Pi(double* Π_S, double* Π_A, double* H, double* Q, double λ, d
 
 
 
-double relax_pressure_inner_loop(double* p, double* p_aux, double* pressure_poisson_RHS, int Lx, int Ly)
+double relax_pressure_inner_loop(double *p, double *p_aux, double *pressure_poisson_RHS, int Lx, int Ly)
 {  
     // Evolves the pressure field towards satisfying the pressure Poisson equation.
     int xup, xdn, yup, ydn;
@@ -305,12 +254,12 @@ double relax_pressure_inner_loop(double* p, double* p_aux, double* pressure_pois
     for(int x=0; x<Lx; x++)
     {
         xup = (x + 1) % Lx;
-        xdn = (x - 1);
+        xdn = x < 1 ? (Lx - 1) : (x - 1);
 
         for(int y; y<Ly; y++)
         {
             yup = (y + 1) % Ly;
-            ydn = (y - 1);
+            ydn = y < 1 ? (Ly - 1) : (y - 1);
 
             //coefficient depend on choice on Laplacian stencil
             //solved for the central term
@@ -326,19 +275,19 @@ double relax_pressure_inner_loop(double* p, double* p_aux, double* pressure_pois
 }
 
 
-void calculate_pressure_terms(double* u, double* Π_S, double* pressure_poisson_RHS, int Lx, int Ly)
+void calculate_pressure_terms(double *u, double *Π_S, double *pressure_poisson_RHS, int Lx, int Ly)
 { 
     //Calculates the right hand side of the Poisson equation
     int xup, xdn, yup, ydn, dudx, dvdy;
     for(int x=0; x<Lx; x++)
     {
          xup = (x + 1) % Lx;
-         xdn = (x - 1);
+         xdn = x < 1 ? (Lx - 1) : (x - 1);
 
          for(int y=0; y<Ly; y++)
          {
             yup = (y + 1) % Ly;
-            ydn = (y - 1);
+            ydn = y < 1 ? (Ly - 1) : (y - 1);
             dudx = 0.5 * (u[(xup*Ly + y)*D + 0] - u[(xdn*Ly + y)*D + 0]);
             dvdy = 0.5 * (u[(x*Ly + yup)*D + 1] - u[(x*Ly + ydn)*D + 1]);
 
@@ -360,7 +309,7 @@ void calculate_pressure_terms(double* u, double* Π_S, double* pressure_poisson_
 
 
 
-int relax_pressure(double* u, double* p, double* Π_S, double* p_aux, double*  pressure_poisson_RHS, 
+int relax_pressure(double *u, double *p, double *Π_S, double *p_aux, double *pressure_poisson_RHS, 
                                 double dt_pseudo, double target_rel_change, int max_p_iters, int Lx, int Ly)
 {
     //Find pressure field that maintains incompressibility of flow field
@@ -405,7 +354,7 @@ int relax_pressure(double* u, double* p, double* Π_S, double* p_aux, double*  p
 
 
 
-void upwind_advective_term(double* u, double* arr, double* out, double coeff, int Lx, int Ly, int ncomps)
+void upwind_advective_term(double *u, double *arr, double *out, double coeff, int Lx, int Ly, int ncomps)
 {
     //calculate second-order upwind advective derivative -(u•∇)[arr] and add this to 'out'
     int xup, xdn, xupup, xdndn, ydn, ydndn, yup, yupup;
@@ -416,9 +365,9 @@ void upwind_advective_term(double* u, double* arr, double* out, double coeff, in
     for(int x=0; x<Lx; x++)
     {   
         xup = (x + 1) % Lx;   //periodic boundary in x
-        xdn = (x - 1);
+        xdn = x < 1 ? (Lx - 1) : (x - 1);
         xupup = (x + 2) % Lx;
-        xdndn = (x - 2);
+        xdndn = x < 2 ? (Lx - 2 + x) : (x - 2);   //go to the (second last - i) index if x is i position among first 2 indices else x is the immediate past 2 index
 
         for(int y = 0; y<Ly; y++)
         {
@@ -447,8 +396,8 @@ void upwind_advective_term(double* u, double* arr, double* out, double coeff, in
             tmp = coeff * u[(x*Ly + y)*D + 1];
             if(u[(x*Ly + y)*D + 1] > 0)
             {
-                ydn = (y - 1);
-                ydndn = (y - 2);
+                ydn = y < 1 ? (Ly - 1) : (y - 1);
+                ydndn =  y < 2 ? (Ly - 2 + y) : (y - 2);
                 for(int q=0; q<ncomps; q++)
                 {
                     out[(x*Ly + y)*ncomps + q] += tmp * (3*arr[(x*Ly + y)*ncomps + q] - 4*arr[(x*Ly + ydn)*ncomps + q] 
@@ -472,7 +421,7 @@ void upwind_advective_term(double* u, double* arr, double* out, double coeff, in
 }
 
 
-void u_update_p_Π_terms(double* dudt, double* u, double* p, double*  Π_S, double* Π_A, int Lx, int Ly)
+void u_update_p_Π_terms(double *dudt, double *u, double *p, double *Π_S, double *Π_A, int Lx, int Ly)
 {
     //add velocity update terms from poressure and active+elastic forces
     int xup, xdn, yup, ydn;
@@ -480,11 +429,11 @@ void u_update_p_Π_terms(double* dudt, double* u, double* p, double*  Π_S, doub
     for(int x=0; x<Lx; x++)
     {
         xup = (x + 1) % Lx;
-        xdn = (x - 1);
+        xdn = x < 1 ? (Lx - 1) : (x - 1);
         for(int y=0; y<Ly; y++)
         {
             yup = (y + 1) % Ly;
-            ydn = (y - 1);
+            ydn = y < 1 ? (Ly - 1) : (y - 1);
             //pressure + force density from elastic and active stresses
             dudt[(x*Ly + y)*D + 0] += 0.5 * (-(p[xup*Ly + y] - p[xdn*Ly + y]) //[-grad(p)]_x
                 //F_x = dx Πxx + dy Πxy: 
@@ -502,7 +451,7 @@ void u_update_p_Π_terms(double* dudt, double* u, double* p, double*  Π_S, doub
 
 
 
-void get_Q_update(double* dQ, double* Q, double* H, double* S, double* u, double gamma, int Lx, int Ly, int ncomps)
+void get_Q_update(double *dQ, double *Q, double *H, double *S, double *u, double gamma, int Lx, int Ly, int ncomps)
 {
     //Calculate update to Q tensor
     for(int i=0; i<Lx*Ly*ncomps; i++) {dQ[i] = (1/gamma)*H[i] + S[i];}
@@ -510,7 +459,7 @@ void get_Q_update(double* dQ, double* Q, double* H, double* S, double* u, double
 }
 
 
-void get_u_update(double* dudt, double* u, double* p, double* Π_S, double* Π_A, double ν, int Lx, int Ly, int D)
+void get_u_update(double *dudt, double *u, double *p, double *Π_S, double *Π_A, double ν, int Lx, int Ly, int D)
 {
     //update flow field after solving for pressure field
     Laplacian_vector(u, dudt, coeff=ν, Lx, Ly, D); //viscous term
@@ -579,7 +528,7 @@ double update_step(double *u, double *dudt , double *Q, double *dQdt, double *p,
     {
         p_iters += update_step_inner(u, dudt , Q, dQdt, p, p_aux, pressure_poisson_RHS, 
                                                 S, H, Π_S, Π_A, consts, Lx, Ly, D, ncomps);
-        stepcount += 1;
+        *stepcount += 1;
         *t += dt;
     }
 
@@ -600,7 +549,7 @@ double update_step(double *u, double *dudt , double *Q, double *dQdt, double *p,
 
 
 
-void run_active_nematic_sim(double* u, double* Q, double* p, char* runlabel, struct consts_dict consts, int Lx, int Ly)
+void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, struct consts_dict consts, int Lx, int Ly)
 {   
     char run_results_path[50], Q_results_path[50], u_results_path[50], run_img_path[50];
 
@@ -726,11 +675,11 @@ void get_saddle_splay(double *Q, double *out)
     for (int x = 0; x < Lx; x++)
     {
         int xup = (x + 1) % Lx;
-        int xdn = (x - 1);
+        int xdn = x < 1 ? (Lx - 1) : (x - 1);
         for (int y = 0; y < Ly; y++)
         {
             int yup = (y + 1) % Ly;
-            int ydn = (y - 1); 
+            int ydn = y < 1 ? (Ly - 1) : (y - 1); 
             double twice_dxQxx = Q[(xup*Ly + y)*ncomps + 0] - Q[(xdn*Ly + y)*ncomps + 0];
             double twice_dxQxy = Q[(xup*Ly + y)*ncomps + 1] - Q[(xdn*Ly + y)*ncomps + 1];
             double twice_dyQxx = Q[(x*Ly + yup)*ncomps + 0] - Q[(x*Ly + ydn)*ncomps + 0];
@@ -747,11 +696,11 @@ void EΩ_from_u(double *u, double *E, double *ω)
     for(int x = 0; x < Lx; x++)
     {
         int xup = (x + 1) % Lx;
-        int xdn = (x - 1);
+        int xdn = x < 1 ? (Lx - 1) : (x - 1);
         for (int y = 0; y < Ly; y++)
         {
             int yup = (y + 1) % Ly;
-            int ydn = (y - 1);
+            int ydn = y < 1 ? (Ly - 1) : (y - 1);
             double dxuy = u[(xup*Ly + y)*D + 1] - u[(xdn*Ly + y)*D + 1];
             double dyux = u[(x*Ly + yup)*D + 0] - u[(x*Ly + ydn)*D + 0];
             E[(x*Ly + y)*D + 0] = 0.5 * (u[(xup*Ly + y)*D + 0] - u[(xdn*Ly + y)*D + 0]);
@@ -809,7 +758,7 @@ void n_dor_from_Q(double *Q, double *nx, double *ny, double *dor)
 
 int main(void)
 {
-
+    /***
     int Lx = 64;
     int Ly = 64;
     double K = 256 * 256;
@@ -838,7 +787,7 @@ int main(void)
     double n_quiver_scale = (2.0 / 3.0) * n_rods;
     double ss_scale = 0.1 * S0;
     int seed = 12345;
-    int save_every_n_steps = 10 * jit_loops;
+    int save_every_n_steps = 10 * jit_loops; ***/
 
     char resultspath[] = "./Results/";
     char runlabel[] = "test ";
