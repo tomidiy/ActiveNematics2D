@@ -28,9 +28,9 @@ double dt_pseudo = 2e-4;    // dt_pseudo = dt
 double p_target_rel_change = 1e-4;   // p_target_rel_change = 1e-4 * dt_pseudo / dt
 int max_p_iters = 0;
 int udiff_thresh = -1;
-int max_steps = (int) 1e7;//1e9;
-double max_t = 1e7;//1e9;
-double zeta = 256.0 * 256.0 / (2.0 * 2.0);   // zeta = K / (active_length_scale * active_length_scale)
+int max_steps = (int) 1e9;
+double max_t = 1e9;
+double zeta = 0.0;//256.0 * 256.0 / (2.0 * 2.0);   // zeta = K / (active_length_scale * active_length_scale)
 double nu = 809.5430810031052 * 1.0;   // nu = sqrt(K / Re);
 double C = 256.0 * 256.0 / (0.5 * 0.5);   // C = K / (nematic_coherence_length * nematic_coherence_length);
 double A = - 256.0 * 256.0/(0.5 * 0.5);   // A = -C
@@ -273,7 +273,7 @@ double relax_pressure_inner_loop(double *p, double *p_aux, double *pressure_pois
     // Evolves the pressure field towards satisfying the pressure Poisson equation. This is done for each lattice site
     int xup, xdn, yup, ydn;
     
-    double sum_abs_p = 0;
+    double sum_abs_p = 0.0;
     for(int x=0; x<Lx; x++)
     {
         xup = (x + 1) % Lx;
@@ -302,7 +302,7 @@ int relax_pressure(double *u, double *p, double *Π_S, double *p_aux, double *pr
                                 double dt_pseudo, double target_rel_change, int max_p_iters, int Lx, int Ly)
 {
     //Find pressure field for each lattic site that maintains incompressibility of flow field
-    double sum_abs_p, rel_change=0;
+    double sum_abs_p;
 
     div_vector(u, pressure_poisson_RHS, Lx, Ly);   //RHS = ∇•u
     for(int i=0; i<Lx*Ly; i++)
@@ -327,18 +327,20 @@ int relax_pressure(double *u, double *p, double *Π_S, double *p_aux, double *pr
         p_iters += 1;
 
         //end pressure relaxation if number of pseudotimesteps exceeds max
-        if(p_iters >= max_p_iters > 0){break;}
+        if(p_iters >= max_p_iters && max_p_iters > 0){printf("p_iters triggered\n");break;}
         
         //end pressure relaxation if relative change per step falls below 
         //threshold:
         if(sum_abs_p != 0)
         {
+            double rel_change = 0.0;
             for(int i=0; i<Lx*Ly; i++)
             {
                 rel_change += fabs(p_aux[i] - p[i]);
-                rel_change  /= sum_abs_p;
             }
-            if(rel_change <= target_rel_change){break;}
+            rel_change  /= sum_abs_p;
+
+            if(rel_change <= target_rel_change){printf("rel_change triggered\n"); break;}
         }
     }
     return p_iters;
@@ -922,6 +924,7 @@ int main(void)
         for(int y = 0; y < Ly; y++) {
             theta_initial[x*Ly + y] = M_PI * rand() / RAND_MAX;
             theta_initial[x*Ly + y] += 1.0 * M_PI * rand() / RAND_MAX;
+            //theta_initial[x*Ly + y] = M_PI/2;
         }
     }
 
