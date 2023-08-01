@@ -237,7 +237,9 @@ void calculate_Pi(double *Π_S, double *Π_A, double *H, double *Q, double λ, d
 void calculate_pressure_terms(double *u, double *Π_S, double *pressure_poisson_RHS, int Lx, int Ly)
 { 
     //Calculates the right hand side of the Poisson equation for each lattice site
-    int xup, xdn, yup, ydn, dudx, dvdy;
+    int xup, xdn, yup, ydn;
+    double dudx, dvdy;
+
     for(int x=0; x<Lx; x++)
     {
          xup = (x + 1) % Lx;
@@ -433,7 +435,7 @@ void u_update_p_Π_terms(double *dudt, double *u, double *p, double *Π_S, doubl
             dudt[(x*Ly + y)*D + 0] += 0.5 * (-(p[xup*Ly + y] - p[xdn*Ly + y]) //[-grad(p)]_x
                 //F_x = dx Πxx + dy Πxy: 
                 + (Π_S[(xup*Ly + y)*D + 0] - Π_S[(xdn*Ly + y)*D + 0])   //dx Πxx
-                + ((Π_S[(x*Ly + yup)*D + 1] - Π_A[x*Ly + yup])-(Π_S[(x*Ly + ydn)*D + 1] - Π_A[x*Ly + ydn]))); //dy Πxy
+                + ((Π_S[(x*Ly + yup)*D + 1] + Π_A[x*Ly + yup])-(Π_S[(x*Ly + ydn)*D + 1] + Π_A[x*Ly + ydn]))); //dy Πxy
 
             dudt[(x*Ly + y)*D + 1] += 0.5 * (-(p[x*Ly + yup] - p[x*Ly + ydn]) //[-grad(p)]_y
                 //F_x = dx Πyx + dy Πyy = dx Πyx - dy Πxx: 
