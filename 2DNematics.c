@@ -175,11 +175,11 @@ void initialize_Q_from_theta(double *Q, double *theta_initial, double S0, int Lx
 
 
 
-void H_S_from_Q(double *u, double *Q, double *H, double *S, double A, double C, double K, double λ, int D)
+void H_S_from_Q(double *u, double *Q, double *H, double *S, double A, double C, double K, double lambda, int D)
 { 
     //Calculations for molecular field and co-rotation tensors for each lattice site. """ 
     int xup, xdn, yup, ydn;
-    double dxux, dxuy, dyux, ωxy, trQsq, λS;
+    double dxux, dxuy, dyux, ωxy, trQsq, lambdaS;
 
     Laplacian_vector(Q, H, K, Lx, Ly, ncomps); // H = K * ∇²Q
     
@@ -199,34 +199,34 @@ void H_S_from_Q(double *u, double *Q, double *H, double *S, double A, double C, 
             dyux = 0.5 * (u[(x*Ly + yup)*D + 0] - u[(x*Ly + ydn)*D + 0]);
             ωxy = 0.5 * (dxuy - dyux);
             trQsq = 2 * (Q[(x*Ly + y)*ncomps + 0]*Q[(x*Ly + y)*ncomps + 0] + Q[(x*Ly + y)*ncomps + 1]*Q[(x*Ly + y)*ncomps + 1]);
-            λS = λ * sqrt(2*trQsq);
+            lambdaS = lambda * sqrt(2*trQsq);
             H[(x*Ly + y)*ncomps + 0] -= (A + C*trQsq) * Q[(x*Ly + y)*ncomps + 0];
             H[(x*Ly + y)*ncomps + 1] -= (A + C*trQsq) * Q[(x*Ly + y)*ncomps + 1];
             
             // using E_xx = du/dx:
-            S[(x*Ly + y)*ncomps + 0] = λS * dxux - 2*ωxy*Q[(x*Ly + y)*ncomps + 1];
+            S[(x*Ly + y)*ncomps + 0] = lambdaS * dxux - 2*ωxy*Q[(x*Ly + y)*ncomps + 1];
             
             // using E_xy = (du/dy + dv/dx)/2:
-            S[(x*Ly + y)*ncomps + 1] = λS * 0.5*(dxuy + dyux) + 2*ωxy*Q[(x*Ly + y)*ncomps + 0];
+            S[(x*Ly + y)*ncomps + 1] = lambdaS * 0.5*(dxuy + dyux) + 2*ωxy*Q[(x*Ly + y)*ncomps + 0];
         }
     }
 }
 
 
 
-void calculate_Pi(double *Π_S, double *Π_A, double *H, double *Q, double λ, double ζ, int Lx, int Ly, int ncomps)
+void calculate_Pi(double *Pi_S, double *Pi_A, double *H, double *Q, double lambda, double zeta, int Lx, int Ly, int ncomps)
 {
     //Calculation of stress tensor (elastic + active contributions) for each lattice site. The stress tensor is saved as a vector
     
     //symmetric traceless component (two elements)
-    for(int i=0; i<Lx*Ly*ncomps; i++){Π_S[i] = -λ * H[i] - ζ * Q[i];}
+    for(int i=0; i<Lx*Ly*ncomps; i++){Pi_S[i] = -lambda * H[i] - zeta * Q[i];}
     
     //antisymmetric component (one element)
     for(int x=0; x<Lx; x++)
     { 
         for(int y=0; y<Ly; y++)
         {
-            Π_A[x*Ly + y] = 2 * (Q[(x*Ly + y)*ncomps+0] * H[(x*Ly + y)*ncomps+ 1] - H[(x*Ly + y)*ncomps + 
+            Pi_A[x*Ly + y] = 2 * (Q[(x*Ly + y)*ncomps+0] * H[(x*Ly + y)*ncomps+ 1] - H[(x*Ly + y)*ncomps + 
             0] * Q[(x*Ly + y)*ncomps + 1]);
         }
     }
@@ -234,7 +234,7 @@ void calculate_Pi(double *Π_S, double *Π_A, double *H, double *Q, double λ, d
 
 
 
-void calculate_pressure_terms(double *u, double *Π_S, double *pressure_poisson_RHS, int Lx, int Ly)
+void calculate_pressure_terms(double *u, double *Pi_S, double *pressure_poisson_RHS, int Lx, int Ly)
 { 
     //Calculates the right hand side of the Poisson equation for each lattice site
     int xup, xdn, yup, ydn;
@@ -254,9 +254,9 @@ void calculate_pressure_terms(double *u, double *Π_S, double *pressure_poisson_
 
             pressure_poisson_RHS[x*Ly + y] += (
                 //∇•F = ∂ᵢ∂ⱼΠᵢⱼ = (∂x^2 - ∂y^2) Π_{xx} + 2 ∂x ∂y Π_{xy}
-                (Π_S[(xup*Ly + y)*D + 0] + Π_S[(xdn*Ly + y)*D + 0] - Π_S[(x*Ly + yup)*D + 0] - Π_S[(x*Ly + ydn)*D + 0])
-                + 0.5 * (Π_S[(xup*Ly + yup)*D + 1] - Π_S[(xup*Ly + ydn)*D + 1] - Π_S[(xdn*Ly + yup)*D + 1] + 
-                Π_S[(xdn*Ly + ydn)*D + 1])
+                (Pi_S[(xup*Ly + y)*D + 0] + Pi_S[(xdn*Ly + y)*D + 0] - Pi_S[(x*Ly + yup)*D + 0] - Pi_S[(x*Ly + ydn)*D + 0])
+                + 0.5 * (Pi_S[(xup*Ly + yup)*D + 1] - Pi_S[(xup*Ly + ydn)*D + 1] - Pi_S[(xdn*Ly + yup)*D + 1] + 
+                Pi_S[(xdn*Ly + ydn)*D + 1])
                 // - d_i u_j d_j u_i
                 - (
                     // (d_x u_x)^2 + (d_y u_y)^2:
@@ -300,7 +300,7 @@ double relax_pressure_inner_loop(double *p, double *p_aux, double *pressure_pois
 
 
 
-int relax_pressure(double *u, double *p, double *Π_S, double *p_aux, double *pressure_poisson_RHS, 
+int relax_pressure(double *u, double *p, double *Pi_S, double *p_aux, double *pressure_poisson_RHS, 
                                 double dt_pseudo, double target_rel_change, int max_p_iters, int Lx, int Ly)
 {
     //Find pressure field for each lattic site that maintains incompressibility of flow field
@@ -310,7 +310,7 @@ int relax_pressure(double *u, double *p, double *Π_S, double *p_aux, double *pr
     for(int i=0; i<Lx*Ly; i++)
     {pressure_poisson_RHS[i] *= 1/dt_pseudo;}      //RHS = (∇•u)/∆t
     // RHS += -d_i u_j d_j u_i + ∇•F :
-    calculate_pressure_terms(u, Π_S, pressure_poisson_RHS, Lx, Ly);
+    calculate_pressure_terms(u, Pi_S, pressure_poisson_RHS, Lx, Ly);
     int p_iters = 0;
 
     bool pressure_has_not_relaxed = 1;
@@ -418,7 +418,7 @@ void upwind_advective_term(double *u, double *arr, double *out, double coeff, in
 }
 
 
-void u_update_p_Π_terms(double *dudt, double *u, double *p, double *Π_S, double *Π_A, int Lx, int Ly)
+void u_update_p_Pi_terms(double *dudt, double *u, double *p, double *Pi_S, double *Pi_A, int Lx, int Ly)
 {
     //For a lattice site, add velocity update terms from pressure and active+elastic forces
     int xup, xdn, yup, ydn;
@@ -434,13 +434,13 @@ void u_update_p_Π_terms(double *dudt, double *u, double *p, double *Π_S, doubl
             //pressure + force density from elastic and active stresses
             dudt[(x*Ly + y)*D + 0] += 0.5 * (-(p[xup*Ly + y] - p[xdn*Ly + y]) //[-grad(p)]_x
                 //F_x = dx Πxx + dy Πxy: 
-                + (Π_S[(xup*Ly + y)*D + 0] - Π_S[(xdn*Ly + y)*D + 0])   //dx Πxx
-                + ((Π_S[(x*Ly + yup)*D + 1] + Π_A[x*Ly + yup])-(Π_S[(x*Ly + ydn)*D + 1] + Π_A[x*Ly + ydn]))); //dy Πxy
+                + (Pi_S[(xup*Ly + y)*D + 0] - Pi_S[(xdn*Ly + y)*D + 0])   //dx Πxx
+                + ((Pi_S[(x*Ly + yup)*D + 1] + Pi_A[x*Ly + yup])-(Pi_S[(x*Ly + ydn)*D + 1] + Pi_A[x*Ly + ydn]))); //dy Πxy
 
             dudt[(x*Ly + y)*D + 1] += 0.5 * (-(p[x*Ly + yup] - p[x*Ly + ydn]) //[-grad(p)]_y
                 //F_x = dx Πyx + dy Πyy = dx Πyx - dy Πxx: 
-                - (Π_S[(x*Ly + yup)*D + 0] - Π_S[(x*Ly + ydn)*D + 0])   //-dy Πxx
-                + ((Π_S[(xup*Ly + y)*D + 1] - Π_A[xup*Ly + y])-(Π_S[(xdn*Ly + y)*D + 1] - Π_A[xdn*Ly + y])));
+                - (Pi_S[(x*Ly + yup)*D + 0] - Pi_S[(x*Ly + ydn)*D + 0])   //-dy Πxx
+                + ((Pi_S[(xup*Ly + y)*D + 1] - Pi_A[xup*Ly + y])-(Pi_S[(xdn*Ly + y)*D + 1] - Pi_A[xdn*Ly + y])));
         }
     }
 
@@ -456,20 +456,20 @@ void get_Q_update(double *dQ, double *Q, double *H, double *S, double *u, double
 }
 
 
-void get_u_update(double *dudt, double *u, double *p, double *Π_S, double *Π_A, double ν, int Lx, int Ly, int D)
+void get_u_update(double *dudt, double *u, double *p, double *Pi_S, double *Pi_A, double nu, int Lx, int Ly, int D)
 {
     //update flow field for the lattice sites after solving for pressure field
-    Laplacian_vector(u, dudt, ν, Lx, Ly, D); //viscous term
+    Laplacian_vector(u, dudt, nu, Lx, Ly, D); //viscous term
     upwind_advective_term(u, u, dudt, coeff=-1, Lx, Ly, D); //convective term
     //pressure and stress tensor (active + elastic) contributions 
-    u_update_p_Π_terms(dudt, u, p, Π_S, Π_A, Lx, Ly);  
+    u_update_p_Pi_terms(dudt, u, p, Pi_S, Pi_A, Lx, Ly);  
    
 }
 
 
 
 int update_step_inner(double *u, double *dudt , double *Q, double *dQdt, double *p, double  *p_aux, 
-                            double *pressure_poisson_RHS, double *S, double *H, double *Π_S, double *Π_A,
+                            double *pressure_poisson_RHS, double *S, double *H, double *Pi_S, double *Pi_A,
                                     struct consts_dict consts, int Lx, int Ly, int D, int ncomps)
 {
     // Euler update for the lattice sites 
@@ -480,21 +480,21 @@ int update_step_inner(double *u, double *dudt , double *Q, double *dQdt, double 
     double A = consts.A;
     double C = consts.C;
     double K = consts.K;
-    double λ = consts.lambda;
-    double ζ = consts.zeta;
+    double lambda = consts.lambda;
+    double zeta = consts.zeta;
     double gamma = consts.gamma;
     double p_target_rel_change = consts.p_target_rel_change;
     double max_p_iters = consts.max_p_iters;
 
      // update H and S  
-    H_S_from_Q(u, Q, H, S, A, C, K, λ, D);  
+    H_S_from_Q(u, Q, H, S, A, C, K, lambda, D);  
     apply_Q_boundary_conditions(H);
 
     // update Pi
-    calculate_Pi(Π_S, Π_A, H, Q, λ, ζ, Lx, Ly, ncomps);  
+    calculate_Pi(Pi_S, Pi_A, H, Q, lambda, zeta, Lx, Ly, ncomps);  
 
     // relax pressure to ensure incompressibility 
-    int p_iters = relax_pressure(u, p, Π_S, p_aux, pressure_poisson_RHS, 
+    int p_iters = relax_pressure(u, p, Pi_S, p_aux, pressure_poisson_RHS, 
                         dt_pseudo, p_target_rel_change, max_p_iters, Lx, Ly);
 
     //calculate dQdt 
@@ -502,7 +502,7 @@ int update_step_inner(double *u, double *dudt , double *Q, double *dQdt, double 
     apply_Q_boundary_conditions(dQdt);
 
     //calculate dudt 
-    get_u_update(dudt, u, p, Π_S, Π_A, nu, Lx, Ly, D);
+    get_u_update(dudt, u, p, Pi_S, Pi_A, nu, Lx, Ly, D);
     apply_u_boundary_conditions(dudt);
 
     //update Q, u 
@@ -513,7 +513,7 @@ int update_step_inner(double *u, double *dudt , double *Q, double *dQdt, double 
 }
 
 double update_step(double *u, double *dudt , double *Q, double *dQdt, double *p, double *p_aux, 
-                            double *pressure_poisson_RHS, double *S, double *H, double *Π_S, double *Π_A,
+                            double *pressure_poisson_RHS, double *S, double *H, double *Pi_S, double *Pi_A,
                                     struct consts_dict consts, int *stepcount, double *t, double *udiff, int n_steps,
                                          int Lx, int Ly, int D, int ncomps)
 {
@@ -525,7 +525,7 @@ double update_step(double *u, double *dudt , double *Q, double *dQdt, double *p,
     for (int i = 0; i < n_steps; i++) 
     {
         p_iters += update_step_inner(u, dudt , Q, dQdt, p, p_aux, pressure_poisson_RHS, 
-                                                S, H, Π_S, Π_A, consts, Lx, Ly, D, ncomps);
+                                                S, H, Pi_S, Pi_A, consts, Lx, Ly, D, ncomps);
         *stepcount += 1;
         *t += dt;
     }
@@ -681,8 +681,8 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     double p_aux[Lx][Ly];         // auxiliary array for pressure updates
     double H[Lx][Ly][ncomps];       // molecular field 
     double S[Lx][Ly][ncomps];       // rotational terms for Q
-    double Π_S[Lx][Ly][D];    // stress tensor traceless-symmetric component
-    double pi_A[Lx][Ly];       // stress tensor antisymmetric component
+    double Pi_S[Lx][Ly][D];    // stress tensor traceless-symmetric component
+    double Pi_A[Lx][Ly];       // stress tensor antisymmetric component
     double div_u[Lx][Ly];       // holds divergence of velocity field
     double pressure_poisson_RHS[Lx][Ly]; // holds right-hand side of pressure-Poisson equation
     
@@ -709,8 +709,8 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     memset(p_aux, 0, sizeof(p));
     memset(H, 0, sizeof(Q));
     memset(S, 0, sizeof(Q));
-    memset(Π_S, 0, sizeof(u));
-    memset(pi_A, 0, sizeof(p));
+    memset(Pi_S, 0, sizeof(u));
+    memset(Pi_A, 0, sizeof(p));
     memset(pressure_poisson_RHS, 0, sizeof(p));
     memset(div_u, 0, sizeof(p));
     
@@ -856,11 +856,12 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
             // do one step in first loop to catch errors and get printout
             start =  clock();
             update_step(u, &dudt[0][0][0] , Q, &dQdt[0][0][0], p, &p_aux[0][0], 
-                                &pressure_poisson_RHS[0][0], &S[0][0][0], &H[0][0][0], &Π_S[0][0][0], &pi_A[0][0],
+                                &pressure_poisson_RHS[0][0], &S[0][0][0], &H[0][0][0], &Pi_S[0][0][0], &Pi_A[0][0],
                                     consts, &stepcount, &t, &udiff, n_steps, Lx, Ly, D, ncomps);
+
             numberOfUpdatesCalled+=1;
             end = clock();
-             printf("dudt: %f\n", dudt[0][0][0]);
+            printf("dudt: %f\n", dudt[0][0][0]);
         }
 
         
