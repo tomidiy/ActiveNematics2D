@@ -30,7 +30,7 @@ int max_p_iters = 0;
 int udiff_thresh = -1;
 int max_steps = (int) 1e9;
 double max_t = 1e9;
-double zeta = 0.0;//256.0 * 256.0 / (2.0 * 2.0);   // zeta = K / (active_length_scale * active_length_scale)
+double zeta = 20000.0;//256.0 * 256.0 / (2.0 * 2.0);   // zeta = K / (active_length_scale * active_length_scale)
 double nu = 809.5430810031052 * 1.0;   // nu = sqrt(K / Re);
 double C = 256.0 * 256.0 / (0.5 * 0.5);   // C = K / (nematic_coherence_length * nematic_coherence_length);
 double A = - 256.0 * 256.0/(0.5 * 0.5);   // A = -C
@@ -744,6 +744,11 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     while(udiff > udiff_thresh & stepcount < max_steps & t < max_t)
     {
         //printf("While loop entered \n");
+        clock_t start, end;
+        double time_diff=0.;
+        int numberOfUpdatesCalled = 0;
+
+        
    
         if(stepcount - stepcount_last_save >= save_every_n_steps)
         {
@@ -843,19 +848,24 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
             //bool save_plot = 1;
             stepcount_last_save = stepcount;
         }
-
+        
         else
         {
             int n_steps = t>0 ? jit_loops : 1 ;
             bool save_plot = 0;
             // do one step in first loop to catch errors and get printout
-    
+            start =  clock();
             update_step(u, &dudt[0][0][0] , Q, &dQdt[0][0][0], p, &p_aux[0][0], 
                                 &pressure_poisson_RHS[0][0], &S[0][0][0], &H[0][0][0], &Π_S[0][0][0], &pi_A[0][0],
                                     consts, &stepcount, &t, &udiff, n_steps, Lx, Ly, D, ncomps);
+            numberOfUpdatesCalled+=1;
+            end = clock();
              printf("dudt: %f\n", dudt[0][0][0]);
         }
 
+        
+        time_diff += (double)(end - start) / CLOCKS_PER_SEC; 
+        printf("average time difference is: %f\n", time_diff/(numberOfUpdatesCalled));
         
         div_vector(u, &div_u[0][0], Lx, Ly);
   
