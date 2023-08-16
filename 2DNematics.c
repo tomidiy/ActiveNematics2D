@@ -28,15 +28,15 @@ double dt_pseudo = 2e-4;    // dt_pseudo = dt
 double p_target_rel_change = 1e-4;   // p_target_rel_change = 1e-4 * dt_pseudo / dt
 int max_p_iters = 0;
 int udiff_thresh = -1;
-int max_steps = (int) 1e9;
-double max_t = 1e9;
-double zeta = 20000.0;//256.0 * 256.0 / (2.0 * 2.0);   // zeta = K / (active_length_scale * active_length_scale)
+int max_steps = (int) 1e7; //1e9;
+double max_t = 1e7; //1e9;
+double zeta = 100.0;//256.0 * 256.0 / (2.0 * 2.0);   // zeta = K / (active_length_scale * active_length_scale)
 double nu = 809.5430810031052 * 1.0;   // nu = sqrt(K / Re);
 double C = 256.0 * 256.0 / (0.5 * 0.5);   // C = K / (nematic_coherence_length * nematic_coherence_length);
 double A = - 256.0 * 256.0/(0.5 * 0.5);   // A = -C
 double S0 = 0.5 * 1.0;           //S0 = sqrt(-A / (4 * C))
-int seed = 12345;
-int save_every_n_steps = 10 * 100;  // save_every_n_steps = 10 * jit_loops
+//int seed = 12345;
+int save_every_n_steps = 100;//10 * 100;  // save_every_n_steps = 10 * jit_loops
 
 
 double coeff = -1;
@@ -60,7 +60,7 @@ struct consts_dict
 };
 
 
-  struct consts_dict consts;
+struct consts_dict consts;
 
 
 void make_directory_if_needed(char* pathname) 
@@ -179,7 +179,7 @@ void H_S_from_Q(double *u, double *Q, double *H, double *S, double A, double C, 
 { 
     //Calculations for molecular field and co-rotation tensors for each lattice site. """ 
     int xup, xdn, yup, ydn;
-    double dxux, dxuy, dyux, ωxy, trQsq, lambdaS;
+    double dxux, dxuy, dyux, omegaxy, trQsq, lambdaS;
 
     Laplacian_vector(Q, H, K, Lx, Ly, ncomps); // H = K * ∇²Q
     
@@ -197,17 +197,17 @@ void H_S_from_Q(double *u, double *Q, double *H, double *S, double A, double C, 
             dxux = 0.5 * (u[(xup*Ly + y)*D + 0] - u[(xdn*Ly + y)*D + 0]);
             dxuy = 0.5 * (u[(xup*Ly + y)*D + 1] - u[(xdn*Ly + y)*D + 1]);
             dyux = 0.5 * (u[(x*Ly + yup)*D + 0] - u[(x*Ly + ydn)*D + 0]);
-            ωxy = 0.5 * (dxuy - dyux);
+            omegaxy = 0.5 * (dxuy - dyux);
             trQsq = 2 * (Q[(x*Ly + y)*ncomps + 0]*Q[(x*Ly + y)*ncomps + 0] + Q[(x*Ly + y)*ncomps + 1]*Q[(x*Ly + y)*ncomps + 1]);
             lambdaS = lambda * sqrt(2*trQsq);
             H[(x*Ly + y)*ncomps + 0] -= (A + C*trQsq) * Q[(x*Ly + y)*ncomps + 0];
             H[(x*Ly + y)*ncomps + 1] -= (A + C*trQsq) * Q[(x*Ly + y)*ncomps + 1];
             
             // using E_xx = du/dx:
-            S[(x*Ly + y)*ncomps + 0] = lambdaS * dxux - 2*ωxy*Q[(x*Ly + y)*ncomps + 1];
+            S[(x*Ly + y)*ncomps + 0] = lambdaS * dxux - 2*omegaxy*Q[(x*Ly + y)*ncomps + 1];
             
             // using E_xy = (du/dy + dv/dx)/2:
-            S[(x*Ly + y)*ncomps + 1] = lambdaS * 0.5*(dxuy + dyux) + 2*ωxy*Q[(x*Ly + y)*ncomps + 0];
+            S[(x*Ly + y)*ncomps + 1] = lambdaS * 0.5*(dxuy + dyux) + 2*omegaxy*Q[(x*Ly + y)*ncomps + 0];
         }
     }
 }
@@ -571,7 +571,7 @@ void get_saddle_splay(double *Q, double *out)
 }
 
 
-void E_omega_from_u(double *u, double *E, double *ω)
+void E_omega_from_u(double *u, double *E, double *omega)
 {
     //Compute the strain rate tensor E and vorticity ω from the flow field u  for each lattice site. (Only used for plots)
     
@@ -587,7 +587,7 @@ void E_omega_from_u(double *u, double *E, double *ω)
             double dyux = u[(x*Ly + yup)*D + 0] - u[(x*Ly + ydn)*D + 0];
             E[(x*Ly + y)*D + 0] = 0.5 * (u[(xup*Ly + y)*D + 0] - u[(xdn*Ly + y)*D + 0]);
             E[(x*Ly + y)*D + 1] = 0.25 * (dxuy + dyux);
-            ω[x*Ly + y] = 0.25 * (dxuy - dyux);
+            omega[x*Ly + y] = 0.25 * (dxuy - dyux);
         }
     }
 }
@@ -625,7 +625,7 @@ void n_dor_from_Q(double *Q, double *nx, double *ny, double *dor)
 
 void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, struct consts_dict consts, int Lx, int Ly)
 {   
-    char run_results_path[50], Q_results_path[50], u_results_path[50], run_img_path[50];
+    char run_results_path[50], Q_results_path[50], u_results_path[50], run_img_path[50], p_mean_results_path[50];
     char ss_results_path[50], omega_results_path[50], E_results_path[50], n_dor_results_path[50], p_results_path[50];
 
     sprintf(run_results_path, "%s%s/",resultspath, runlabel);
@@ -654,6 +654,9 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
 
     sprintf(p_results_path, "%s%s/",run_results_path, "p");
     make_directory_if_needed(p_results_path);
+
+    sprintf(p_mean_results_path, "%s%s/",run_results_path, "p_mean");
+    make_directory_if_needed(p_mean_results_path);
 
     // save parameters to text file
     FILE *f;
@@ -687,7 +690,7 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     double pressure_poisson_RHS[Lx][Ly]; // holds right-hand side of pressure-Poisson equation
     
     double E[Lx][Ly][D];
-    double ω[Lx][Ly];
+    double omega[Lx][Ly];
     double nx[Lx][Ly];
     double ny[Lx][Ly];
     double dor[Lx][Ly];
@@ -715,7 +718,7 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     memset(div_u, 0, sizeof(p));
     
     memset(E, 0, sizeof(u));
-    memset(ω, 0, sizeof(p));
+    memset(omega, 0, sizeof(p));
     memset(nx, 0, sizeof(p));
     memset(ny, 0, sizeof(p));
     memset(dor, 0, sizeof(p));
@@ -725,12 +728,7 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     // other initializations
     double udiff = udiff_thresh + 1;
     int stepcount = 0;
-    double t = 0;
-
-    E_omega_from_u(u, &E[0][0][0], &ω[0][0]);
-    n_dor_from_Q(Q, &nx[0][0], &ny[0][0], &dor[0][0]);
-    get_saddle_splay(Q, &ss[0][0]);
-    
+    double t = 0.;
 
     int stepcount_last_save = - save_every_n_steps;
     printf("stepcount last saved: %d\n", stepcount_last_save);
@@ -740,7 +738,10 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
     apply_u_boundary_conditions(u);
     apply_p_boundary_conditions(p);
     
-
+    char filename[50];
+    sprintf(filename, "AverageP_%f.txt", zeta);
+    FILE *file;
+    file = fopen(strcat(p_mean_results_path, filename), "a");
     while(udiff > udiff_thresh & stepcount < max_steps & t < max_t)
     {
         //printf("While loop entered \n");
@@ -771,6 +772,11 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
                 fclose(f);
             }
 
+
+            E_omega_from_u(u, &E[0][0][0], &omega[0][0]);
+            n_dor_from_Q(Q, &nx[0][0], &ny[0][0], &dor[0][0]);
+            get_saddle_splay(Q, &ss[0][0]);
+
             char label0[2];
             char file_name0[100];
             strcpy(label0, "E");
@@ -781,7 +787,6 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
                     for (int y = 0; y < Ly; y++) 
                     {
                         fprintf(g, "%f %f\n", E[x][y][0] , E[x][y][1]); 
-
                     }
                 }
             fclose(g);
@@ -797,7 +802,6 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
                     for (int y = 0; y < Ly; y++) 
                     {
                         fprintf(p1, "%f %f %f\n", nx[x][y], ny[x][y], dor[x][y]); 
-
                     }
                 }
             fclose(p1);
@@ -812,10 +816,9 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
                 {
                     for (int y = 0; y < Ly; y++) 
                     {
-                        fprintf(p2, "%f\n", ω[x][y]); 
-
+                        fprintf(p2, "%f\n", omega[x][y]); 
                     }
-                }
+                }            
             fclose(p2);
 
             char label3[3];
@@ -828,7 +831,6 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
                     for (int y = 0; y < Ly; y++) 
                     {
                         fprintf(p3, "%f\n", ss[x][y]); 
-
                     }
                 }
             fclose(p3);
@@ -841,14 +843,15 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
             FILE* p4 = fopen(file_name4, "w");
             for (int x = 0; x < Lx*Ly; x++) 
                 {
-                        fprintf(p4, "%f\n", p[x]);       
-                }
+                    fprintf(p4, "%f\n", p[x]);       
+                }   
             fclose(p4);
 
-            //bool save_plot = 1;
+
             stepcount_last_save = stepcount;
         }
         
+
         else
         {
             int n_steps = t>0 ? jit_loops : 1 ;
@@ -863,7 +866,6 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
             end = clock();
             printf("dudt: %f\n", dudt[0][0][0]);
         }
-
         
         time_diff += (double)(end - start) / CLOCKS_PER_SEC; 
         printf("average time difference is: %f\n", time_diff/(numberOfUpdatesCalled));
@@ -871,18 +873,16 @@ void run_active_nematic_sim(double *u, double *Q, double *p, char *runlabel, str
         div_vector(u, &div_u[0][0], Lx, Ly);
   
 
-        E_omega_from_u(u, &E[0][0][0], &ω[0][0]);
-        n_dor_from_Q(Q, &nx[0][0], &ny[0][0], &dor[0][0]);
-        get_saddle_splay(Q, &ss[0][0]);
-    
-        //apply_p_boundary_conditions(&ss[0][0]);
+        double pressureSum = 0.0;
+        for(int i=0; i<Lx*Ly; i++){pressureSum += p[i];}
+        fprintf(file, "%f  %d\n",(double) pressureSum/(Lx*Ly), stepcount);
+        
 
-        //printf("p: %f\n", p[0]);
-        //printf("udiff: %f\n", udiff);
         printf("stepcount: %d\n", stepcount);
        
-       printf("u: %f\n", *u);
+        printf("u: %f\n", *u);
     }
+    fclose(file);
 }
 
 
@@ -940,8 +940,39 @@ int main(void)
             //theta_initial[x*Ly + y] = M_PI/2;
         }
     }
-
     
+
+
+    /*  
+    char file_holder[100];       
+    sprintf(file_holder, "Theta_initial.txt");
+    FILE* pf = fopen(file_holder, "w");
+    for (int i = 0; i < Lx*Ly; i++) 
+        {
+            fprintf(pf, "%f\n", theta_initial[i]); 
+        }
+    fclose(pf);
+    */
+
+    /*
+    FILE *file = fopen("Theta_initial.txt", "r");
+    if(file == NULL){perror("Error opening file"); return 1;}
+    char buffer[1024];
+    int valueCount = 0;
+    while (fgets(buffer, sizeof(buffer), file) != NULL)
+    {
+        buffer[strcspn(buffer, "\n")] = '\0';
+        double value = strtod(buffer, NULL);
+        theta_initial[valueCount] = value;
+        //printf("Theta initial: %f\n", theta_initial[valueCount]);
+
+        valueCount++;
+    }
+    fclose(file);
+    printf("valueCount: %d\n", valueCount);
+    */
+    
+
     // initialize the velocity field, pressure field, and Q-tensor
     double u[Lx][Ly][D];
     for (int x = 0; x < Lx; x++)
