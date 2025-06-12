@@ -41,29 +41,28 @@ gcc -o active_nematic main.c -lm
 ```bash
 ./active_nematic
 ```
--- The program initializes a 64x64 grid with random Q-tensor orientations and evolves the system for up to 10^7 steps or until convergence (`udiff_thresh` or `max_t` is reached).
--- Output files are saved in `Results/test/` with subdirectories for Q-tensor (`Q/`), velocity (`u/`), pressure (`p/`), saddle-splay (`ss/`), strain rate (`E/`), vorticity (`omega/`), and nematic director (`n_dor/`).
+ - The program initializes a 64x64 grid with random Q-tensor orientations and evolves the system for up to 10^7 steps or until convergence (`udiff_thresh` or `max_t` is reached).
+ - Output files are saved in `Results/test/` with subdirectories for Q-tensor (`Q/`), velocity (`u/`), pressure (`p/`), saddle-splay (`ss/`), strain rate (`E/`), vorticity (`omega/`), and nematic director (`n_dor/`).
 
 - **Key Parameters** (defined in `main.c`):
--- `Lx`, `Ly`: Grid size (64x64).
--- `dt`: Time step (2e-4).
--- `K`: Elastic constant (256^2).
--- `zeta`: Activity parameter (100.0).
--- `gamma`: Rotational viscosity (10 * 256).
--- `lambda`: Flow-alignment parameter (0.1).
--- `save_every_n_steps`: Frequency of saving outputs (every 100 steps).
--- Modify these in `main.c` to adjust simulation behavior.
+ - `Lx`, `Ly`: Grid size (64x64).
+ - `dt`: Time step (2e-4).
+ - `K`: Elastic constant (256^2).
+ - `zeta`: Activity parameter (100.0).
+ - `gamma`: Rotational viscosity (10 * 256).
+ - `lambda`: Flow-alignment parameter (0.1).
+ - `save_every_n_steps`: Frequency of saving outputs (every 100 steps).
+ - Modify these in `main.c` to adjust simulation behavior.
 
 - **Output Files**:
--- `Results/test/Q/Q_XXXXXXXXXX.txt`: Q-tensor components at each step.
--- `Results/test/u/u_XXXXXXXXXX.txt`: Velocity field components.
--- `Results/test/p_mean/AverageP_100.0.txt`: Average pressure over time.
--- Additional files for saddle-splay, vorticity, strain rate, and nematic director.
--- Use Python/Matplotlib to visualize outputs. create_plot.py can be used for visualization.
+ - `Results/test/Q/Q_XXXXXXXXXX.txt`: Q-tensor components at each step.
+ - `Results/test/u/u_XXXXXXXXXX.txt`: Velocity field components.
+ - `Results/test/p_mean/AverageP_100.0.txt`: Average pressure over time.
+ - Additional files for saddle-splay, vorticity, strain rate, and nematic director.
+ - Use Python/Matplotlib to visualize outputs. create_plot.py can be used for visualization.
 
 ## File Structure
-
-active-nematic-simulation/
+```active-nematic-simulation/
 ├── main.c               # Main simulation code
 ├── Results/             # Output directory for simulation data
 │   ├── test/            # Subdirectory for run labeled "test"
@@ -78,6 +77,7 @@ active-nematic-simulation/
 │   │   └── test_consts.txt # Simulation parameters
 ├── Images/              # Directory for plots (empty by default)
 └── README.md             # This file
+```
 
 ## Key Functions
 - **Laplacian()**: Computes the Laplacian of a scalar field for each lattice site.
