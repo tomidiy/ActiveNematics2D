@@ -22,13 +22,13 @@ This repository contains a C-based simulation of active nematic systems, a compu
 ## Installation
 1. **Clone the Repository**:
 ```bash
-git clone https://github.com/tomidiy/active-nematic-simulation.git
+git clone https://github.com/tomidiy/ActiveNematics2D.git
 cd active-nematic-simulation
 ```
 
 2. **Compile the Code**:
 ```bash
-gcc -o active_nematic main.c -lm
+gcc -o active_nematic 2DNematics.c -lm
 ```
 - The `-lm` flag links the math library for functions like `sqrt` and `cos`.
 - Ensure `gcc` is installed (sudo apt install gcc on Ubuntu or equivalent).
