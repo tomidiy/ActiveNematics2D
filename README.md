@@ -34,32 +34,36 @@ gcc -o active_nematic main.c -lm
 - Ensure `gcc` is installed (sudo apt install gcc on Ubuntu or equivalent).
 
 3. Create Output Directories:
-- The code automatically creates `Results/` and `Images/` directories for simulation outputs. Ensure write permissions in the working directory.
+- The code automatically creates `Results/` and `Images/` directories for simulation outputs.
+- Ensure write permissions in the working directory.
+  ```bash
+  chmod -R u+w .
+  ```
 
 ## Usage
 - **Run the Simulation**:
 ```bash
 ./active_nematic
 ```
- - The program initializes a 64x64 grid with random Q-tensor orientations and evolves the system for up to 10^7 steps or until convergence (`udiff_thresh` or `max_t` is reached).
- - Output files are saved in `Results/test/` with subdirectories for Q-tensor (`Q/`), velocity (`u/`), pressure (`p/`), saddle-splay (`ss/`), strain rate (`E/`), vorticity (`omega/`), and nematic director (`n_dor/`).
+  - The program initializes a 64x64 grid with random Q-tensor orientations and evolves the system for up to 10^7 steps or until convergence  (`udiff_thresh` or `max_t` is reached).
+  - Output files are saved in `Results/test/` with subdirectories for Q-tensor (`Q/`), velocity (`u/`), pressure (`p/`), saddle-splay   (`ss/`), strain rate (`E/`), vorticity (`omega/`), and nematic director (`n_dor/`).
 
 - **Key Parameters** (defined in `main.c`):
- - `Lx`, `Ly`: Grid size (64x64).
- - `dt`: Time step (2e-4).
- - `K`: Elastic constant (256^2).
- - `zeta`: Activity parameter (100.0).
- - `gamma`: Rotational viscosity (10 * 256).
- - `lambda`: Flow-alignment parameter (0.1).
- - `save_every_n_steps`: Frequency of saving outputs (every 100 steps).
- - Modify these in `main.c` to adjust simulation behavior.
+  - `Lx`, `Ly`: Grid size (64x64).
+  - `dt`: Time step (2e-4).
+  - `K`: Elastic constant (256^2).
+  - `zeta`: Activity parameter (100.0).
+  - `gamma`: Rotational viscosity (10 * 256).
+  - `lambda`: Flow-alignment parameter (0.1).
+  - `save_every_n_steps`: Frequency of saving outputs (every 100 steps).
+  - Modify these in `main.c` to adjust simulation behavior.
 
 - **Output Files**:
- - `Results/test/Q/Q_XXXXXXXXXX.txt`: Q-tensor components at each step.
- - `Results/test/u/u_XXXXXXXXXX.txt`: Velocity field components.
- - `Results/test/p_mean/AverageP_100.0.txt`: Average pressure over time.
- - Additional files for saddle-splay, vorticity, strain rate, and nematic director.
- - Use Python/Matplotlib to visualize outputs. create_plot.py can be used for visualization.
+  - `Results/test/Q/Q_XXXXXXXXXX.txt`: Q-tensor components at each step.
+  - `Results/test/u/u_XXXXXXXXXX.txt`: Velocity field components.
+  - `Results/test/p_mean/AverageP_100.0.txt`: Average pressure over time.
+  - Additional files for saddle-splay, vorticity, strain rate, and nematic director.
+  - Use Python/Matplotlib to visualize outputs. create_plot.py can be used for visualization.
 
 ## File Structure
 ```active-nematic-simulation/
@@ -80,14 +84,14 @@ gcc -o active_nematic main.c -lm
 ```
 
 ## Key Functions
-- **Laplacian()**: Computes the Laplacian of a scalar field for each lattice site.
-- **Laplacian_vector()**: Computes the Laplacian of a vector field (e.g., Q-tensor, velocity).
-- **div_vector()**: Calculates the divergence of the velocity field.
-- **H_S_from_Q()**: Computes molecular field (H) and co-rotation tensor (S) for Q-tensor dynamics.
-- **calculate_Pi()**: Calculates elastic and active stress tensors.
-- **relax_pressure()**: Solves the pressure-Poisson equation to ensure incompressibility.
-- **update_step()**: Performs Euler updates for Q-tensor, velocity, and pressure fields.
-- **run_active_nematic_sim()**: Main simulation loop, handling initialization and output.
+- **`Laplacian()`**: Computes the Laplacian of a scalar field for each lattice site.
+- **`Laplacian_vector()`**: Computes the Laplacian of a vector field (e.g., Q-tensor, velocity).
+- **`div_vector()`**: Calculates the divergence of the velocity field.
+- **`H_S_from_Q()`**: Computes molecular field (H) and co-rotation tensor (S) for Q-tensor dynamics.
+- **`calculate_Pi()`**: Calculates elastic and active stress tensors.
+- **`relax_pressure()`**: Solves the pressure-Poisson equation to ensure incompressibility.
+- **`update_step()`**: Performs Euler updates for Q-tensor, velocity, and pressure fields.
+- **`run_active_nematic_sim()`**: Main simulation loop, handling initialization and output.
 
 ## Future Improvements
 - **Customizable Boundary Conditions**: Implement apply_Q_boundary_conditions(), apply_u_boundary_conditions(), and apply_p_boundary_conditions() for flexible configurations.
