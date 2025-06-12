@@ -1,39 +1,31 @@
 # ActiveNematics2D
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)] (LICENSE)
 
-##Overview
+## Overview
 This repository contains a C-based simulation of active nematic systems, a computational model for studying the dynamics of active matter, such as liquid crystals or biological systems with self-driven components. The code implements a lattice-based numerical simulation to model the evolution of the Q-tensor (describing nematic order), velocity field, and pressure field, using Euler updates and finite-difference methods. Key features include GPU-acceleratable algorithms (aligned with CUDA expertise from my resume) and efficient handling of large-scale datasets for physical systems.
 
-##Features
-- **2D Lattice Simulation: Models active nematic systems on a 64x64 grid with periodic boundary conditions.
-
-- **Q-Tensor Dynamics: Computes the nematic order parameter (Q-tensor) and its evolution, capturing orientational order and defects.
-
-- **Velocity and Pressure Fields: Solves for incompressible flow using a pressure-Poisson equation, ensuring physical accuracy.
-
-- **Numerical Methods: Implements finite-difference schemes (Laplacian, divergence, upwind advection) for robust computation.
-
-- **Data Output: Saves simulation results (Q-tensor, velocity, pressure, saddle-splay energy, etc.) to text files for analysis and visualization.
-
-- **Modular Design: Structured functions for easy extension, e.g., adding GPU acceleration or new boundary conditions.
+## Features
+- **2D Lattice Simulation**: Models active nematic systems on a 64x64 grid with periodic boundary conditions.
+- **Q-Tensor Dynamics**: Computes the nematic order parameter (Q-tensor) and its evolution, capturing orientational order and defects.
+- **Velocity and Pressure Fields**: Solves for incompressible flow using a pressure-Poisson equation, ensuring physical accuracy.
+- **Numerical Methods**: Implements finite-difference schemes (Laplacian, divergence, upwind advection) for robust computation.
+- **Data Output**: Saves simulation results (Q-tensor, velocity, pressure, saddle-splay energy, etc.) to text files for analysis and visualization.
+- **Modular Design**: Structured functions for easy extension, e.g., adding GPU acceleration or new boundary conditions.
 
 
 ##Prerequisites
-- **Operating System: Linux, macOS, or Windows (with a C compiler like gcc).
-
-- **Compiler: GCC or any C99-compatible compiler.
-
-- **Dependencies: Standard C libraries (stdlib.h, math.h, stdio.h, string.h, unistd.h, sys/types.h, sys/stat.h, stdbool.h, time.h).
-
-- **Optional for Visualization: Python with NumPy/Matplotlib for post-processing simulation outputs (not included in this repository).
+- **Operating System**: Linux, macOS, or Windows (with a C compiler like `gcc`).
+- **Compiler**: GCC or any C99-compatible compiler.
+- **Dependencies**: Standard C libraries (`stdlib.h`, `math.h`, `stdio.h`, `string.h`, `unistd.h`, `sys/types.h`, `sys/stat.h`, `stdbool.h`, `time.h`).
+- **Optional for Visualization**: Python with NumPy/Matplotlib for post-processing simulation outputs (not included in this repository).
 
 ##Installation
 1. **Clone the Repository**:
 ```bash
 git clone https://github.com/tomidiy/active-nematic-simulation.git
-cd active-nematic-simulation
+cd active-nematic-simulation  ```
 
-Compile the Code:
+2. **Compile the Code**:
 bash
 
 gcc -o active_nematic main.c -lm
