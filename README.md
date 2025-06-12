@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)] (LICENSE)
 
 ## Overview
-This repository contains a C-based simulation of active nematic systems, a computational model for studying the dynamics of active matter, such as liquid crystals or biological systems with self-driven components. The code implements a lattice-based numerical simulation to model the evolution of the Q-tensor (describing nematic order), velocity field, and pressure field, using Euler updates and finite-difference methods. Key features include GPU-acceleratable algorithms (aligned with CUDA expertise from my resume) and efficient handling of large-scale datasets for physical systems.
+This repository contains a C-based simulation of active nematic systems, a computational model for studying the dynamics of active matter, such as liquid crystals or biological systems with self-driven components. The code implements a lattice-based numerical simulation to model the evolution of the Q-tensor (describing nematic order), velocity field, and pressure field, using Euler updates and finite-difference methods. Key features include GPU-acceleratable algorithms and efficient handling of large-scale datasets for physical systems.
 
 ## Features
 - **2D Lattice Simulation**: Models active nematic systems on a 64x64 grid with periodic boundary conditions.
@@ -63,7 +63,7 @@ gcc -o active_nematic main.c -lm
   - `Results/test/u/u_XXXXXXXXXX.txt`: Velocity field components.
   - `Results/test/p_mean/AverageP_100.0.txt`: Average pressure over time.
   - Additional files for saddle-splay, vorticity, strain rate, and nematic director.
-  - Use Python/Matplotlib to visualize outputs. create_plot.py can be used for visualization.
+  - Use Python/Matplotlib to visualize outputs. `create_plot.py` can be used for visualization.
 
 ## File Structure
 ```active-nematic-simulation/
@@ -94,7 +94,7 @@ gcc -o active_nematic main.c -lm
 - **`run_active_nematic_sim()`**: Main simulation loop, handling initialization and output.
 
 ## Future Improvements
-- **Customizable Boundary Conditions**: Implement apply_Q_boundary_conditions(), apply_u_boundary_conditions(), and apply_p_boundary_conditions() for flexible configurations.
+- **Customizable Boundary Conditions**: Implement `apply_Q_boundary_conditions()`, `apply_u_boundary_conditions()`, and `apply_p_boundary_conditions()` for flexible configurations.
 - **Parallelization**: Extend with MPI for distributed computing on larger grids.
 
 
