@@ -13,41 +13,38 @@ This repository contains a C-based simulation of active nematic systems, a compu
 - **Modular Design**: Structured functions for easy extension, e.g., adding GPU acceleration or new boundary conditions.
 
 
-##Prerequisites
+## Prerequisites
 - **Operating System**: Linux, macOS, or Windows (with a C compiler like `gcc`).
 - **Compiler**: GCC or any C99-compatible compiler.
 - **Dependencies**: Standard C libraries (`stdlib.h`, `math.h`, `stdio.h`, `string.h`, `unistd.h`, `sys/types.h`, `sys/stat.h`, `stdbool.h`, `time.h`).
-- **Optional for Visualization**: Python with NumPy/Matplotlib for post-processing simulation outputs (not included in this repository).
+- **Optional for Visualization**: Python with NumPy/Matplotlib for post-processing simulation outputs (used in `create_plot.py` file).
 
-##Installation
+## Installation
 1. **Clone the Repository**:
 ```bash
 git clone https://github.com/tomidiy/active-nematic-simulation.git
-cd active-nematic-simulation  ```
+cd active-nematic-simulation
+```
 
 2. **Compile the Code**:
-bash
-
+```bash
 gcc -o active_nematic main.c -lm
+```
+- The -lm flag links the math library for functions like sqrt and cos.
+- Ensure gcc is installed (sudo apt install gcc on Ubuntu or equivalent).
 
-The -lm flag links the math library for functions like sqrt and cos.
+3. Create Output Directories:
+- The code automatically creates Results/ and Images/ directories for simulation outputs. Ensure write permissions in the working directory.
 
-Ensure gcc is installed (sudo apt install gcc on Ubuntu or equivalent).
-
-Create Output Directories:
-The code automatically creates Results/ and Images/ directories for simulation outputs. Ensure write permissions in the working directory.
-
-Usage
-Run the Simulation:
-bash
-
+## Usage
+- **Run the Simulation**:
+```bash
 ./active_nematic
+```
+- The program initializes a 64x64 grid with random Q-tensor orientations and evolves the system for up to 10^7 steps or until convergence (udiff_thresh or max_t is reached).
+- Output files are saved in Results/test/ with subdirectories for Q-tensor (Q/), velocity (u/), pressure (p/), saddle-splay (ss/), strain rate (E/), vorticity (omega/), and nematic director (n_dor/).
 
-The program initializes a 64x64 grid with random Q-tensor orientations and evolves the system for up to 10^7 steps or until convergence (udiff_thresh or max_t is reached).
-
-Output files are saved in Results/test/ with subdirectories for Q-tensor (Q/), velocity (u/), pressure (p/), saddle-splay (ss/), strain rate (E/), vorticity (omega/), and nematic director (n_dor/).
-
-Key Parameters (defined in main.c):
+## Key Parameters (defined in `main.c`):
 Lx, Ly: Grid size (64x64).
 
 dt: Time step (2e-4).
@@ -113,18 +110,13 @@ update_step(): Performs Euler updates for Q-tensor, velocity, and pressure field
 
 run_active_nematic_sim(): Main simulation loop, handling initialization and output.
 
-Future Improvements
-GPU Acceleration: Integrate CUDA to enhance performance, leveraging my experience with GPU-accelerated algorithms (10x speedup achieved in a related project).
-
-Customizable Boundary Conditions: Implement apply_Q_boundary_conditions(), apply_u_boundary_conditions(), and apply_p_boundary_conditions() for flexible configurations.
-
-Visualization Tools: Add Python scripts for real-time visualization of defects and flow fields.
-
-Parallelization: Extend with MPI for distributed computing on larger grids.
+## Future Improvements
+- **Customizable Boundary Conditions**: Implement apply_Q_boundary_conditions(), apply_u_boundary_conditions(), and apply_p_boundary_conditions() for flexible configurations.
+- **Parallelization**: Extend with MPI for distributed computing on larger grids.
 
 
 
-##Contributing
+## Contributing
 Contributions are welcome! To contribute:
 Fork the repository.
 
@@ -138,7 +130,7 @@ Open a pull request with a clear description of changes.
 
 Please ensure code follows the existing style (e.g., consistent indentation, clear comments) and includes tests if applicable.
 
-License
+## License
 This project is licensed under the MIT License (LICENSE).
 
 
