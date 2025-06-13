@@ -23,7 +23,7 @@ This repository contains a C-based simulation of active nematic systems, a compu
 1. **Clone the Repository**:
 ```bash
 git clone https://github.com/tomidiy/ActiveNematics2D.git
-cd active-nematic-simulation
+cd ActiveNematics2D
 ```
 
 2. **Compile the Code**:
